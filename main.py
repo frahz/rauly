@@ -1,4 +1,3 @@
-from re import T
 import discord
 import os
 import datetime
@@ -53,13 +52,13 @@ async def wotd():
 
 @wotd.before_loop
 async def before():
+    await client.wait_until_ready()
     print("Waiting for time to post")
     while True:
         now = datetime.datetime.now()
-        if f"{now.hour:02d}:{now.minute:02d}" == "22:50":
+        if f"{now.hour:02d}:{now.minute:02d}" == "08:00":
             break
     print("Finished waiting")
-    await client.wait_until_ready()
 
 
 def wordOfTheDay():
