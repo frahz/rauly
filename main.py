@@ -56,7 +56,7 @@ async def before():
     print("Waiting for time to post")
     while True:
         now = datetime.datetime.now()
-        if f"{now.hour:02d}:{now.minute:02d}" == "08:00":
+        if f"{now.hour:02d}:{now.minute:02d}" == "00:33":
             break
     print("Finished waiting")
 
