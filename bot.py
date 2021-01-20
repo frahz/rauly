@@ -3,6 +3,7 @@ import os
 import datetime
 import json
 import requests
+from time import sleep
 from bs4 import BeautifulSoup
 from discord.ext import tasks
 from urllib.request import urlopen
@@ -12,8 +13,10 @@ load_dotenv()
 
 client = discord.Client()
 token = os.getenv("TOKEN")
-# wotdChannel = os.getenv("CHANNEL")
-wotdChannel = 720052365939572748
+wotdChannel = 797553258478305321  # test server
+# wotdChannel = 720052365939572748  # normal server
+
+botLink = "https://discord.com/oauth2/authorize?client_id=738653577693888542&permissions=85072&scope=bot"
 
 
 @client.event
@@ -41,6 +44,10 @@ async def on_message(message):
         await message.channel.send(quote)
         print("Random quote sent.")
 
+    if message.content.startswith('*invite'):
+        await message.channel.send(botLink)
+        print("bot link sent.")
+
 
 @tasks.loop(hours=24)
 async def wotd():
@@ -56,8 +63,10 @@ async def before():
     print("Waiting for time to post")
     while True:
         now = datetime.datetime.now()
-        if f"{now.hour:02d}:{now.minute:02d}" == "00:33":
+        if f"{now.hour:02d}:{now.minute:02d}" == "8:00":
             break
+        sleep(60)
+
     print("Finished waiting")
 
 
@@ -97,9 +106,9 @@ def wordOfTheDay():
     # word type and definition scraping
     wordTypeDefinitiondiv = soup.find(
         "div", {"class": "otd-item-headword__pos"})
-    textDiv = wordTypeDefinitiondiv.text.strip()
-    wordType, definition = textDiv.split(" ", 1)
-    definition = definition.lstrip()
+    wordType = wordTypeDefinitiondiv.find(
+        "span", {"class": "luna-pos"}).text
+    definition = wordTypeDefinitiondiv("p")[1].text
 
     # example scraping
     examplediv = soup.find("div", {"class": "wotd-item-example__content"})
