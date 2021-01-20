@@ -13,8 +13,8 @@ load_dotenv()
 
 client = discord.Client()
 token = os.getenv("TOKEN")
-wotdChannel = 797553258478305321  # test server
-# wotdChannel = 720052365939572748  # normal server
+# wotdChannel = 797553258478305321  # test server
+wotdChannel = 720052365939572748  # normal server
 
 botLink = "https://discord.com/oauth2/authorize?client_id=738653577693888542&permissions=85072&scope=bot"
 
