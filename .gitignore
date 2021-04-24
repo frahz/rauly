@@ -1,5 +1,11 @@
 # Environment
 .env
 
+# VS Code
+.vscode
+
 # test
 ggd.py
+
+# pycache
+__pycache__/
