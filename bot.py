@@ -3,22 +3,25 @@ import os
 import datetime
 import random
 import pymongo
+from configparser import ConfigParser
 from time import sleep
 from discord.ext import tasks, commands
-from dotenv import load_dotenv
 
 from bot_commands import WordOfTheDay, Quotes
 
-load_dotenv()
 
-token = os.getenv("TOKEN")
+config = ConfigParser()
+config.read("config.ini")
+
 wotdChannel = 797553258478305321  # test server
 # wotdChannel = 720052365939572748  # normal server
 
+token = config["DEFAULT"]["DISCORD_TOKEN"]
 bot = commands.Bot(command_prefix="*")
 botLink = "https://discord.com/oauth2/authorize?client_id=738653577693888542&permissions=85072&scope=bot"
 
-colors = (0x00ffff, 0x9fe2bf, 0xccccff, 0xdfff00, 0xf08080, 0xeb984e)
+colors = (0x00ffff, 0x9fe2bf, 0xccccff, 0xdfff00,
+          0xf08080, 0xeb984e, 0xff8b3d, 0xffaf7a)
 
 quotes = Quotes()
 

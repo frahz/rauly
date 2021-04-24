@@ -9,3 +9,6 @@ ggd.py
 
 # pycache
 __pycache__/
+
+# Project specific files
+config.ini
