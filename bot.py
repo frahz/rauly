@@ -32,9 +32,25 @@ async def on_ready():
     print(f"We have logged in as {bot.user}")
 
 
+@bot.event
+async def on_guild_join(guild):
+    success = False
+    i = 0
+    while not success:
+        try:
+            await guild.channels[i].send("Thanks for the server invite. If you wish to set up the Word of the Day, please run `*setup <channel> <time>` to get it up and running.")
+        except (discord.Forbidden, AttributeError):
+            i += 1
+        except IndexError:
+            pass
+        else:
+            success = True
+
+
 @bot.command()
 async def word(ctx):
-    """Send word of the day"""
+    """Send word of the day."""
+
     _word = wotd()
     await ctx.send(embed=_word)
     print("word sent")
@@ -42,7 +58,8 @@ async def word(ctx):
 
 @bot.command()
 async def today(ctx):
-    """Sends today's quote"""
+    """Sends today's quote."""
+
     quote = quotes.today()
     await ctx.send(quote)
     print("Today's quote sent.")
@@ -50,7 +67,8 @@ async def today(ctx):
 
 @bot.command(name="random")
 async def rand(ctx):
-    """Sends a random quote"""
+    """Sends a random quote."""
+
     quote = quotes.random()
     await ctx.send(quote)
     print("Random quote sent.")
@@ -58,7 +76,8 @@ async def rand(ctx):
 
 @bot.command()
 async def invite(ctx):
-    """Invite the bot to your server"""
+    """Invite the bot to your server."""
+
     await ctx.send(botLink)
     print("bot link sent.")
 
@@ -68,6 +87,12 @@ async def channel(ctx, _channel):
     chan = discord.utils.get(ctx.guild.text_channels, name=_channel)
     print(
         f"got channel {chan} with channel id {chan.id} and type {type(chan)}.")
+
+
+@bot.command()
+async def setup(ctx, _channel, _time="08:00"):
+    """Setup Word of the Day channel
+    and the time in which it gets posted."""
 
 
 @tasks.loop(hours=24)
