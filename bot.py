@@ -1,122 +1,105 @@
 import discord
 import os
 import datetime
-import json
-import requests
+import random
+import pymongo
 from time import sleep
-from bs4 import BeautifulSoup
-from discord.ext import tasks
-from urllib.request import urlopen
+from discord.ext import tasks, commands
 from dotenv import load_dotenv
+
+from bot_commands import WordOfTheDay, Quotes
 
 load_dotenv()
 
-client = discord.Client()
 token = os.getenv("TOKEN")
-# wotdChannel = 797553258478305321  # test server
-wotdChannel = 720052365939572748  # normal server
+wotdChannel = 797553258478305321  # test server
+# wotdChannel = 720052365939572748  # normal server
 
+bot = commands.Bot(command_prefix="*")
 botLink = "https://discord.com/oauth2/authorize?client_id=738653577693888542&permissions=85072&scope=bot"
 
+colors = (0x00ffff, 0x9fe2bf, 0xccccff, 0xdfff00, 0xf08080, 0xeb984e)
 
-@client.event
+quotes = Quotes()
+
+# client = pymongo.MongoClient("mongodb://localhost:27017/")
+# db = client["discord-bot"]
+# collection = db["guilds"]
+
+
+@bot.event
 async def on_ready():
-    print(f"We have logged in as {client.user}")
+    print(f"We have logged in as {bot.user}")
 
 
-@client.event
-async def on_message(message):
-    if message.author == client.user:
-        return
+@bot.command()
+async def word(ctx):
+    """Send word of the day"""
+    _word = wotd()
+    await ctx.send(embed=_word)
+    print("word sent")
 
-    if message.content.startswith('*word'):
-        wordofDay = wordOfTheDay()
-        await message.channel.send(embed=wordofDay)
-        print("Word of the day sent.")
 
-    if message.content.startswith('*today'):
-        quote = todayQuote()
-        await message.channel.send(quote)
-        print("Today's quote sent.")
+@bot.command()
+async def today(ctx):
+    """Sends today's quote"""
+    quote = quotes.today()
+    await ctx.send(quote)
+    print("Today's quote sent.")
 
-    if message.content.startswith('*random'):
-        quote = RandomQuote()
-        await message.channel.send(quote)
-        print("Random quote sent.")
 
-    if message.content.startswith('*invite'):
-        await message.channel.send(botLink)
-        print("bot link sent.")
+@bot.command(name="random")
+async def rand(ctx):
+    """Sends a random quote"""
+    quote = quotes.random()
+    await ctx.send(quote)
+    print("Random quote sent.")
+
+
+@bot.command()
+async def invite(ctx):
+    """Invite the bot to your server"""
+    await ctx.send(botLink)
+    print("bot link sent.")
+
+
+@bot.command()
+async def channel(ctx, _channel):
+    chan = discord.utils.get(ctx.guild.text_channels, name=_channel)
+    print(
+        f"got channel {chan} with channel id {chan.id} and type {type(chan)}.")
 
 
 @tasks.loop(hours=24)
-async def wotd():
-    msgChannel = client.get_channel(wotdChannel)
+async def init_wotd():
+    msgChannel = bot.get_channel(wotdChannel)
     print(f"Got channel {msgChannel}")
-    wordofDay = wordOfTheDay()
-    await msgChannel.send(embed=wordofDay)
+    word = wotd()
+    await msgChannel.send(embed=word)
 
 
-@wotd.before_loop
+@init_wotd.before_loop
 async def before():
-    await client.wait_until_ready()
+    await bot.wait_until_ready()
     print("Waiting for time to post")
     while True:
         now = datetime.datetime.now()
-        if f"{now.hour:02d}:{now.minute:02d}" == "8:00":
+        print(f"{now.hour:02d}:{now.minute:02d}")
+        if f"{now.hour:02d}:{now.minute:02d}" == "13:00":
             break
         sleep(60)
 
     print("Finished waiting")
 
 
-def wordOfTheDay():
-    currentday = datetime.date.today().strftime("%B %d, %Y")
+def wotd():
+    color = random.choice(colors)
 
-    url = "https://www.dictionary.com/e/word-of-the-day/"
-    page = urlopen(url)
-
-    html_bytes = page.read()
-    html = html_bytes.decode("utf-8")
-    soup = BeautifulSoup(html, "html.parser")
-
-    # word scraping
-    worddiv = soup.find(
-        "div", {"class": "otd-item-headword__word"})
-    word = worddiv.text.strip()
-
-    # pronounciation scraping // needs more work
-    pronounciationdiv = soup.find(
-        "div", {"class": "otd-item-headword__pronunciation"})
-    pronounciation = pronounciationdiv.text.strip()
-    boldword = pronounciationdiv.find_all(
-        "span", {"class": "bold"})
-    italicword = pronounciationdiv.find_all(
-        "span", {"class": "italic"})
-    # checks if the word is bolded or italicized and sets correct markdown styles
-    for i in italicword:
-        if i in italicword:
-            italicized = f"*{i.text}*"
-            pronounciation = pronounciation.replace(i.text, italicized)
-    for j in boldword:
-        if j in boldword:
-            bolded = f"**{j.text}**"
-            pronounciation = pronounciation.replace(j.text, bolded)
-
-    # word type and definition scraping
-    wordTypeDefinitiondiv = soup.find(
-        "div", {"class": "otd-item-headword__pos"})
-    wordType = wordTypeDefinitiondiv.find(
-        "span", {"class": "luna-pos"}).text
-    definition = wordTypeDefinitiondiv("p")[1].text
-
-    # example scraping
-    examplediv = soup.find("div", {"class": "wotd-item-example__content"})
-    exampleBase = examplediv.text.strip()
-    example = exampleBase.replace(word, f"**{word}**")
+    (word, currentday, pronounciation,
+     wordType, definition, example) = WordOfTheDay.scrape()
 
     wordofDay = discord.Embed(
-        title=f"{word} | {currentday}", color=0x00ffff)
+        title=f"{word} | {currentday}", color=color)
     wordofDay.set_footer(text="Word of the Day")
     wordofDay.add_field(
         name="Pronounciation", value=pronounciation, inline=False)
@@ -129,19 +112,5 @@ def wordOfTheDay():
     return wordofDay
 
 
-def todayQuote():
-    response = requests.get("https://zenquotes.io/api/today")
-    json_data = json.loads(response.text)
-    quote = f"{json_data[0]['q']} - **{json_data[0]['a']}**"
-    return quote
-
-
-def RandomQuote():
-    response = requests.get("https://zenquotes.io/api/random")
-    json_data = json.loads(response.text)
-    quote = f"{json_data[0]['q']} - **{json_data[0]['a']}**"
-    return quote
-
-
-wotd.start()
-client.run(token)
+init_wotd.start()
+bot.run(token)
