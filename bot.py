@@ -94,6 +94,12 @@ async def setup(ctx, _channel, _time="08:00"):
     """Setup Word of the Day channel
     and the time in which it gets posted."""
 
+    chan = discord.utils.get(ctx.guild.text_channels, name=_channel)
+    if chan == None:
+        await ctx.send(f"The channel given does not exist. Try to send a valid channel.")
+    else:
+        await ctx.send(f"Word of the day will be sent to <#{chan.id}> at {_time}")
+
 
 @tasks.loop(hours=24)
 async def init_wotd():
