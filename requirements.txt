@@ -16,7 +16,7 @@ ipython==7.20.0
 ipython-genutils==0.2.0
 isort==4.3.21
 jedi==0.18.0
-jupyter-client==6.1.11                                                                                                                                04:06:05  
+jupyter-client==6.1.11
 jupyter-core==4.7.1
 lazy-object-proxy==1.4.3
 mccabe==0.6.1
