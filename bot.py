@@ -63,6 +63,12 @@ async def on_guild_join(guild):
     print(f"added guild: {guild} with guild_id: {guild.id}")
 
 
+@bot.event
+async def on_guild_remove(guild):
+    del_from_collection = collection.delete_one({"guild_id": guild.id})
+    print(f"bot has been removed from {guild} with guild_id: {guild.id}.")
+
+
 @bot.command()
 async def invite(ctx):
     """Invite the bot to your server."""
