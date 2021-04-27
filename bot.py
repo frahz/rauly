@@ -3,8 +3,7 @@ import os
 import datetime
 import pymongo
 from configparser import ConfigParser
-from time import sleep
-from discord.ext import tasks, commands
+from discord.ext import commands
 
 
 config = ConfigParser()
@@ -16,18 +15,20 @@ wotdChannel = 797553258478305321  # test server
 token = config["DEFAULT"]["DISCORD_TOKEN"]
 
 bot = commands.Bot(command_prefix="*")
-bot.load_extension("bot_commands.quotes")
-bot.load_extension("bot_commands.word_of_the_day")
+bot.load_extension("cogs.quotes")
+bot.load_extension("cogs.word_of_the_day")
 
 botLink = "https://discord.com/oauth2/authorize?client_id=738653577693888542&permissions=85072&scope=bot"
 
 colors = (0x00ffff, 0x9fe2bf, 0xccccff, 0xdfff00,
-          0xf08080, 0xeb984e, 0xff8b3d, 0xffaf7a)
+          0xf08080, 0xeb984e, 0xff8b3d, 0xffaf7a,
+          0xf8b195, 0xf67280, 0xcd6c84, 0x6c587b,
+          0x355c7d, 0xa8e6ce, 0xff8c94)
 
 
-# client = pymongo.MongoClient("mongodb://localhost:27017/")
-# db = client["discord-bot"]
-# collection = db["guilds"]
+mongo = pymongo.MongoClient("mongodb://localhost:27017/")
+db = mongo["discord-bot"]
+collection = db["guilds"]
 
 
 @bot.event
@@ -49,6 +50,18 @@ async def on_guild_join(guild):
         else:
             success = True
 
+    payload = {
+        "setup": False,
+        "guild": str(guild),
+        "guild_id": guild.id,
+        "wotd_channel": None,
+        "wotd_channel_id": None,
+        "wotd_time": None
+    }
+
+    add_to_collection = collection.insert_one(payload)
+    print(f"added guild: {guild} with guild_id: {guild.id}")
+
 
 @bot.command()
 async def invite(ctx):
@@ -58,34 +71,15 @@ async def invite(ctx):
     print("bot link sent.")
 
 
-@bot.command()
+@bot.command(name="channel")
 async def channel(ctx, _channel):
     chan = discord.utils.get(ctx.guild.text_channels, name=_channel)
-    print(
-        f"got channel {chan} with channel id {chan.id} and type {type(chan)}.")
+    await ctx.reply(
+        f"got channel {str(chan)} with channel id {type(chan.id)}, in {type(chan.guild)} and type {type(chan)} written by <@{ctx.author.id}>.")
 
 
-@tasks.loop(hours=24)
-async def init_wotd():
-    msgChannel = bot.get_channel(wotdChannel)
-    print(f"Got channel {msgChannel}")
-    word = wotd()
-    await msgChannel.send(embed=word)
-
-
-@init_wotd.before_loop
-async def before():
-    await bot.wait_until_ready()
-    print("Waiting for time to post")
-    while True:
-        now = datetime.datetime.now()
-        print(f"{now.hour:02d}:{now.minute:02d}")
-        if f"{now.hour:02d}:{now.minute:02d}" == "13:00":
-            break
-        sleep(60)
-
-    print("Finished waiting")
-
-
-# init_wotd.start()
+@bot.command(name="find")
+async def find(ctx):
+    for item in collection.find():
+        print(item)
 bot.run(token)
