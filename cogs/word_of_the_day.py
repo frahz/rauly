@@ -1,7 +1,9 @@
 import datetime
+import time
 import discord
+import pymongo
 import random
-from discord.ext import commands
+from discord.ext import tasks, commands
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 
@@ -10,10 +12,17 @@ class WordOfTheDay(commands.Cog):
     """word of the day commands and setup"""
 
     colors = (0x00ffff, 0x9fe2bf, 0xccccff, 0xdfff00,
-              0xf08080, 0xeb984e, 0xff8b3d, 0xffaf7a)
+              0xf08080, 0xeb984e, 0xff8b3d, 0xffaf7a,
+              0xf8b195, 0xf67280, 0xcd6c84, 0x6c587b,
+              0x355c7d, 0xa8e6ce, 0xff8c94)
 
     def __init__(self, bot) -> None:
         self.bot = bot
+        self.channel_id = 797553258478305321  # test server
+        self.mongo = pymongo.MongoClient("mongodb://localhost:27017/")
+        self.db = self.mongo["discord-bot"]
+        self.collection = self.db["guilds"]
+        self.init_word.start()
 
     def scrape(self):
         currentday = datetime.date.today().strftime("%B %d, %Y")
@@ -81,8 +90,8 @@ class WordOfTheDay(commands.Cog):
             name="Example", value=example, inline=False)
         return wordofDay
 
-    @commands.command()
-    async def word(self, ctx):
+    @commands.command(name="word")
+    async def send_word(self, ctx):
         """Send word of the day."""
 
         _word = self.wotd()
@@ -94,11 +103,45 @@ class WordOfTheDay(commands.Cog):
         """Setup Word of the Day channel
         and the time in which it gets posted."""
 
+        if self.collection.find_one({"guild_id": ctx.guild.id})["setup"] == True:
+            await ctx.send(f"The server `{ctx.guild}` already has the word of the day setup.")
+            return
+
         chan = discord.utils.get(ctx.guild.text_channels, name=_channel)
         if chan == None:
-            await ctx.send(f"The channel given does not exist. Try to send a valid channel.")
+            await ctx.send("The channel given does not exist. Try to send a valid channel.")
         else:
             await ctx.send(f"Word of the day will be sent to <#{chan.id}> at {_time}")
+            payload = {
+                "setup": True,
+                "guild": str(chan.guild),
+                "guild_id": chan.guild.id,
+                "wotd_channel": str(chan),
+                "wotd_channel_id": chan.id,
+                "wotd_time": _time
+            }
+            add_to_collection = self.collection.insert_one(payload)
+            print(
+                f"added {chan} from {chan.guild} to the database and it will post at {_time}")
+
+    @tasks.loop(hours=24)
+    async def init_word(self):
+        channel = await self.bot.fetch_channel(self.channel_id)
+        print(f"Got channel {channel}")
+        word = self.wotd()
+        await channel.send(embed=word)
+
+    @init_word.before_loop
+    async def before_wotd(self):
+        await self.bot.wait_until_ready()
+        print("Waiting for time to post")
+        while True:
+            now = datetime.datetime.now()
+            print(f"{now.hour:02d}:{now.minute:02d}")
+            if f"{now.hour:02d}:{now.minute:02d}" == "13:00":
+                break
+            time.sleep(60)
+        print("Finished waiting")
 
 
 def setup(bot):
