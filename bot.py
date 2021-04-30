@@ -77,15 +77,11 @@ async def invite(ctx):
     print("bot link sent.")
 
 
-@bot.command(name="channel")
-async def channel(ctx, _channel):
-    chan = discord.utils.get(ctx.guild.text_channels, name=_channel)
-    await ctx.reply(
-        f"got channel {str(chan)} with channel id {type(chan.id)}, in {type(chan.guild)} and type {type(chan)} written by <@{ctx.author.id}>.")
-
-
 @bot.command(name="find")
 async def find(ctx):
+    """Debugging database"""
     for item in collection.find():
         print(item)
+
+
 bot.run(token)
