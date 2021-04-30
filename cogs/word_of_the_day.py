@@ -1,5 +1,5 @@
+import asyncio
 import datetime
-import time
 import discord
 import pymongo
 import random
@@ -18,7 +18,6 @@ class WordOfTheDay(commands.Cog):
 
     def __init__(self, bot) -> None:
         self.bot = bot
-        self.channel_id = 797553258478305321  # test server
         self.mongo = pymongo.MongoClient("mongodb://localhost:27017/")
         self.db = self.mongo["discord-bot"]
         self.collection = self.db["guilds"]
@@ -90,6 +89,16 @@ class WordOfTheDay(commands.Cog):
             name="Example", value=example, inline=False)
         return wordofDay
 
+    def seconds_until(self, hours, minutes):
+        given_time = datetime.time(hours, minutes)
+        now = datetime.datetime.now()
+        future_exec = datetime.datetime.combine(now, given_time)
+        if (future_exec - now).days < 0:  # If we are past the execution, it will take place tomorrow
+            future_exec = datetime.datetime.combine(
+                now + datetime.timedelta(days=1), given_time)  # days always >= 0
+
+        return (future_exec - now).total_seconds()
+
     @commands.command(name="word")
     async def send_word(self, ctx):
         """Send word of the day."""
@@ -113,35 +122,47 @@ class WordOfTheDay(commands.Cog):
         else:
             await ctx.send(f"Word of the day will be sent to <#{chan.id}> at {_time}")
             payload = {
-                "setup": True,
-                "guild": str(chan.guild),
-                "guild_id": chan.guild.id,
-                "wotd_channel": str(chan),
-                "wotd_channel_id": chan.id,
-                "wotd_time": _time
+                "$set": {
+                    "setup": True,
+                    "guild": str(chan.guild),
+                    "guild_id": chan.guild.id,
+                    "wotd_channel": str(chan),
+                    "wotd_channel_id": chan.id,
+                    "wotd_time": _time
+                }
             }
-            add_to_collection = self.collection.insert_one(payload)
+            update_collection = self.collection.update_one(
+                {"guild_id": chan.guild.id}, payload)
             print(
-                f"added {chan} from {chan.guild} to the database and it will post at {_time}")
+                f"updated {chan} from {chan.guild} to the database and it will post at {_time}")
 
     @tasks.loop(hours=24)
     async def init_word(self):
-        channel = await self.bot.fetch_channel(self.channel_id)
-        print(f"Got channel {channel}")
-        word = self.wotd()
-        await channel.send(embed=word)
+        for guild in self.collection.find().sort("wotd_time"):
+            h = int(guild["wotd_time"][:2])
+            m = int(guild["wotd_time"][3:])
+            print(f"waiting for {guild['guild']} at {guild['wotd_time']}")
+            secs = self.seconds_until(h, m)
+            if secs > 86340: # check to see if the upcoming guild has the same post time as the previous one
+                pass
+            else:
+                await asyncio.sleep(secs)
+            channel = await self.bot.fetch_channel(guild["wotd_channel_id"])
+            print(f"Got channel {channel}")
+            word = self.wotd()
+            await channel.send(embed=word)
 
-    @init_word.before_loop
-    async def before_wotd(self):
-        await self.bot.wait_until_ready()
-        print("Waiting for time to post")
-        while True:
-            now = datetime.datetime.now()
-            print(f"{now.hour:02d}:{now.minute:02d}")
-            if f"{now.hour:02d}:{now.minute:02d}" == "13:00":
-                break
-            time.sleep(60)
-        print("Finished waiting")
+    # @init_word.before_loop
+    # async def before_wotd(self):
+    #     await self.bot.wait_until_ready()
+    #     print("Waiting for time to post")
+    #     while True:
+    #         now = datetime.datetime.now()
+    #         print(f"{now.hour:02d}:{now.minute:02d}")
+    #         if f"{now.hour:02d}:{now.minute:02d}" == "02:05":
+    #             break
+    #         await asyncio.sleep(60)
+    #     print("Finished waiting")
 
 
 def setup(bot):
