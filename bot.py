@@ -1,6 +1,5 @@
 import discord
 import os
-import datetime
 import pymongo
 from configparser import ConfigParser
 from discord.ext import commands
@@ -9,14 +8,14 @@ from discord.ext import commands
 config = ConfigParser()
 config.read("config.ini")
 
-wotdChannel = 797553258478305321  # test server
-# wotdChannel = 720052365939572748  # normal server
-
 token = config["DEFAULT"]["DISCORD_TOKEN"]
 
 bot = commands.Bot(command_prefix="*")
-bot.load_extension("cogs.quotes")
-bot.load_extension("cogs.word_of_the_day")
+
+for file in os.listdir("cogs"):
+    if file.endswith(".py"):
+        name = file[:-3]
+        bot.load_extension(f"cogs.{name}")
 
 botLink = "https://discord.com/oauth2/authorize?client_id=738653577693888542&permissions=85072&scope=bot"
 
@@ -26,6 +25,7 @@ colors = (0x00ffff, 0x9fe2bf, 0xccccff, 0xdfff00,
           0x355c7d, 0xa8e6ce, 0xff8c94)
 
 
+# database info
 mongo = pymongo.MongoClient("mongodb://localhost:27017/")
 db = mongo["discord-bot"]
 collection = db["guilds"]
