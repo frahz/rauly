@@ -8,6 +8,7 @@ If you want to invite the bot to your server, heres the [link](https://discord.c
 
 ## TODO
 
+- [ ] Add timezone functionality to Word of the Day.
 - [ ] Clean up the code
 - [ ] Track how many people are in the voice call and save to a database
 - [ ] Be able to respond to messages with images, and add images so they can be used later on
