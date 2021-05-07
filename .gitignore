@@ -5,8 +5,7 @@
 .vscode
 
 # test
-ggd.py
-test.py
+tests/
 
 # pycache
 __pycache__/
