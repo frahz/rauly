@@ -9,8 +9,9 @@ config = ConfigParser()
 config.read("config.ini")
 
 token = config["DEFAULT"]["DISCORD_TOKEN"]
+intents = discord.Intents.all()
 
-bot = commands.Bot(command_prefix="*")
+bot = commands.Bot(command_prefix="*", intents=intents)
 
 for file in os.listdir("cogs"):
     if file.endswith(".py"):
