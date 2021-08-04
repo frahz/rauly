@@ -5,7 +5,7 @@ from discord.ext import commands, tasks
 
 
 class VoiceChannel(commands.Cog):
-    def __init__(self, bot) -> None:
+    def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
 
         self.ini_path = os.path.join(os.getcwd(), 'config.ini')
@@ -23,14 +23,15 @@ class VoiceChannel(commands.Cog):
         print(self.category)
 
     @commands.command(name="vc")
-    async def vc_member_count(self, ctx):
+    async def vc_member_count(self, ctx: commands.Context):
         total_member_count = 0
         for vc in self.category.voice_channels:
             ch_count = len(vc.members)
-            print(f"name: {vc.name} members: {ch_count}")
+            if ch_count != 0:
+                print(f"name: {vc.name} members: {ch_count}")
             total_member_count += ch_count
         print(f"total peeps in vc: {total_member_count}")
 
 
-def setup(bot):
+def setup(bot: commands.Bot):
     bot.add_cog(VoiceChannel(bot))

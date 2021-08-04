@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 import discord
+from discord.ext.commands.core import Command
 import pymongo
 import random
 from discord.ext import tasks, commands
@@ -16,7 +17,7 @@ class WordOfTheDay(commands.Cog):
               0xf8b195, 0xf67280, 0xcd6c84, 0x6c587b,
               0x355c7d, 0xa8e6ce, 0xff8c94)
 
-    def __init__(self, bot) -> None:
+    def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
         self.mongo = pymongo.MongoClient("mongodb://localhost:27017/")
         self.db = self.mongo["discord-bot"]
@@ -100,7 +101,7 @@ class WordOfTheDay(commands.Cog):
         return (future_exec - now).total_seconds()
 
     @commands.command(name="word")
-    async def send_word(self, ctx):
+    async def send_word(self, ctx: commands.Context):
         """Send word of the day."""
 
         _word = self.wotd()
@@ -108,7 +109,7 @@ class WordOfTheDay(commands.Cog):
         print("word sent")
 
     @commands.command()
-    async def setup(self, ctx, _channel, _time="08:00"):
+    async def setup(self, ctx: commands.Context, _channel, _time="08:00"):
         """Setup Word of the Day channel
         and the time in which it gets posted."""
 
@@ -143,7 +144,7 @@ class WordOfTheDay(commands.Cog):
             m = int(guild["wotd_time"][3:])
             print(f"waiting for {guild['guild']} at {guild['wotd_time']}")
             secs = self.seconds_until(h, m)
-            if secs > 86340: # check to see if the upcoming guild has the same post time as the previous one
+            if secs > 86340:  # check to see if the upcoming guild has the same post time as the previous one
                 pass
             else:
                 await asyncio.sleep(secs)
@@ -152,18 +153,6 @@ class WordOfTheDay(commands.Cog):
             word = self.wotd()
             await channel.send(embed=word)
 
-    # @init_word.before_loop
-    # async def before_wotd(self):
-    #     await self.bot.wait_until_ready()
-    #     print("Waiting for time to post")
-    #     while True:
-    #         now = datetime.datetime.now()
-    #         print(f"{now.hour:02d}:{now.minute:02d}")
-    #         if f"{now.hour:02d}:{now.minute:02d}" == "02:05":
-    #             break
-    #         await asyncio.sleep(60)
-    #     print("Finished waiting")
 
-
-def setup(bot):
+def setup(bot: commands.Bot):
     bot.add_cog(WordOfTheDay(bot))
