@@ -52,6 +52,33 @@ class General(commands.Cog):
         for item in self.collection.find():
             print(item)
 
+    @commands.has_permissions(manage_roles=True)
+    @commands.command()
+    async def timeout(self, ctx: commands.Context, member: discord.Member, _time: int = 5):
+        """"Timeout user for certain amount of time(default is 5 minutes)."""
+
+        await ctx.send(f"user: {member.mention} has been timed out for {_time} minutes.")
+
+        timeout_role = discord.utils.get(self.guild.roles, name="timeout")
+        secs = _time * 60
+
+        await member.add_roles(timeout_role)
+        await asyncio.sleep(secs)
+        await member.remove_roles(timeout_role)
+        await ctx.send(f"user {member.mention}'s time out has expired.")
+
+    @commands.has_permissions(manage_roles=True)
+    @commands.command()
+    async def untimeout(self, ctx: commands.Context, member: discord.Member):
+        """"Untimeout a member that is currently timed out before their timeout expires"""
+
+        timeout_role = discord.utils.get(self.guild.roles, name="timeout")
+
+        if timeout_role in member.roles:
+            await member.remove_roles(timeout_role)
+            await ctx.send(f"user: {member.mention} has been untimed out.")
+        else:
+            await ctx.send(f"user: {member.mention} is not currently timed out.")
 
 
 def setup(bot: commands.Bot):
