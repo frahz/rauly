@@ -1,7 +1,6 @@
 import asyncio
 import datetime
 import discord
-from discord.ext.commands.core import Command
 import pymongo
 import random
 from discord.ext import tasks, commands
