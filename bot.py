@@ -9,16 +9,17 @@ config = ConfigParser()
 config.read("config.ini")
 
 token = config["DEFAULT"]["DISCORD_TOKEN"]
+guild_id = int(config["TEST"]["GUILD_ID"])
 intents = discord.Intents.all()
 
 bot = commands.Bot(command_prefix="*", intents=intents)
+
 
 for file in os.listdir("cogs"):
     if file.endswith(".py"):
         name = file[:-3]
         bot.load_extension(f"cogs.{name}")
 
-botLink = "https://discord.com/oauth2/authorize?client_id=738653577693888542&permissions=85072&scope=bot"
 
 colors = (0x00ffff, 0x9fe2bf, 0xccccff, 0xdfff00,
           0xf08080, 0xeb984e, 0xff8b3d, 0xffaf7a,
@@ -38,7 +39,7 @@ async def on_ready():
 
 
 @bot.event
-async def on_guild_join(guild):
+async def on_guild_join(guild: discord.Guild):
     success = False
     i = 0
     while not success:
@@ -65,24 +66,20 @@ async def on_guild_join(guild):
 
 
 @bot.event
-async def on_guild_remove(guild):
+async def on_guild_remove(guild: discord.Guild):
     del_from_collection = collection.delete_one({"guild_id": guild.id})
     print(f"bot has been removed from {guild} with guild_id: {guild.id}.")
 
 
-@bot.command()
-async def invite(ctx):
-    """Invite the bot to your server."""
+@bot.event
+async def on_member_join(member: discord.Member):
+    guild = bot.get_guild(guild_id)
+    if member.guild != guild:
+        return
 
-    await ctx.send(botLink)
-    print("bot link sent.")
-
-
-@bot.command(name="find")
-async def find(ctx):
-    """Debugging database"""
-    for item in collection.find():
-        print(item)
+    default = discord.utils.get(guild.roles, name="Proletariat 👶🏽")
+    await member.add_roles(default, reason="deafult role")
+    print(f"gave role {default} to {member.display_name}")
 
 
 bot.run(token)
