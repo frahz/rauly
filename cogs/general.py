@@ -20,7 +20,7 @@ class General(commands.Cog):
         self.db = self.mongo["discord-bot"]
         self.collection = self.db["guilds"]
 
-        self.guild_id = int(self.config["TEST"]["GUILD_ID"])
+        self.guild_id = int(self.config["DEFAULT"]["GUILD_ID"])
 
     @commands.Cog.listener()
     async def on_ready(self):
