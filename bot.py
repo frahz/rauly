@@ -36,6 +36,8 @@ collection = db["guilds"]
 @bot.event
 async def on_ready():
     print(f"We have logged in as {bot.user}")
+    game = discord.Game(f"in {len(bot.guilds)} servers")
+    await bot.change_presence(activity=game)
 
 
 @bot.event
@@ -63,12 +65,16 @@ async def on_guild_join(guild: discord.Guild):
 
     add_to_collection = collection.insert_one(payload)
     print(f"added guild: {guild} with guild_id: {guild.id}")
+    game = discord.Game(f"in {len(bot.guilds)} servers")
+    await bot.change_presence(activity=game)
 
 
 @bot.event
 async def on_guild_remove(guild: discord.Guild):
     del_from_collection = collection.delete_one({"guild_id": guild.id})
     print(f"bot has been removed from {guild} with guild_id: {guild.id}.")
+    game = discord.Game(f"in {len(bot.guilds)} servers")
+    await bot.change_presence(activity=game)
 
 
 @bot.event
