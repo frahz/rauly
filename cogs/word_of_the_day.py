@@ -138,7 +138,7 @@ class WordOfTheDay(commands.Cog):
 
     @tasks.loop(hours=24)
     async def init_word(self):
-        for guild in self.collection.find().sort("wotd_time"):
+        for guild in self.collection.find({"setup": True}).sort("wotd_time"):
             h = int(guild["wotd_time"][:2])
             m = int(guild["wotd_time"][3:])
             print(f"waiting for {guild['guild']} at {guild['wotd_time']}")
