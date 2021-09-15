@@ -9,7 +9,7 @@ config = ConfigParser()
 config.read("config.ini")
 
 token = config["DEFAULT"]["DISCORD_TOKEN"]
-guild_id = int(config["TEST"]["GUILD_ID"])
+guild_id = int(config["DEFAULT"]["GUILD_ID"])
 intents = discord.Intents.all()
 
 bot = commands.Bot(command_prefix="*", intents=intents)
