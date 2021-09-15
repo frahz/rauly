@@ -29,23 +29,18 @@ class VoiceChannel(commands.Cog):
         self.category: discord.CategoryChannel = self.bot.get_channel(
             self.vc_id)
         print(self.category)
+        self.vc_logs.start()
 
     @commands.command(name="vc")
     async def vc_member_count(self, ctx: commands.Context):
         total_member_count = 0
-        for vc in self.category.voice_channels:
-            ch_count = len(vc.members)
-            if ch_count != 0:
-                print(f"name: {vc.name} members count: {ch_count}")
-            total_member_count += ch_count
-        print(f"total peeps in vc: {total_member_count}")
+        channel_data = {}
 
-        # channel_data = {}
-        # for vc in self.category.voice_channels:
-        #     channel_data[vc.name] = len(vc.members)
-        #     ch_count = len(vc.members)
-        #     total_member_count += ch_count
-        # print(channel_data)
+        for vc in self.category.voice_channels:
+            channel_data[vc.name] = len(vc.members)
+            ch_count = len(vc.members)
+            total_member_count += ch_count
+        print(channel_data)
 
     @tasks.loop(hours=1)
     async def vc_logs(self):
@@ -60,8 +55,12 @@ class VoiceChannel(commands.Cog):
 
         payload = {
             "time": datetime.now(eastern),
-            "member_count": total_member_count
+            "member_count": total_member_count,
+            "channel_data": channel_data
         }
+
+        self.collection.insert_one(payload)
+        print(f"added voice channel data at {datetime.now(eastern)}")
 
 
 def setup(bot: commands.Bot):
